@@ -25,15 +25,16 @@
         .stats-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
         .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 3px solid var(--secondary); }
         .stat-title { color: var(--secondary); font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
-        .stat-row { display: flex; justify-content: space-between; margin-top: 5px; }
+        .stat-row { display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.95em; }
         .btn-clear { background: var(--danger); color: white; margin-top: 20px; opacity: 0.7; font-size: 14px; }
+        .highlight { color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body onload="carregarTudo()">
 
 <div class="container">
     <h1>🚗 Driver Pro</h1>
-    <div style="text-align:center; color:#888; font-size:0.8em; margin-bottom:20px;">Gestão Diária, Semanal, Mensal e Anual</div>
+    <div style="text-align:center; color:#888; font-size:0.8em; margin-bottom:20px;">Gestão de Horas e Lucros</div>
 
     <div class="input-group">
         <label>💰 Ganho Bruto (R$)</label>
@@ -63,18 +64,21 @@
         <h3>📊 Resumos Acumulados</h3>
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-title">📅 Esta Semana</div>
-                <div class="stat-row"><span>Lucro:</span> <span id="semLucro">R$ 0,00</span></div>
-                <div class="stat-row"><span>Lucro/KM:</span> <span id="semKm">R$ 0,00</span></div>
+                <div class="stat-title">📅 Esta Semana (7 dias)</div>
+                <div class="stat-row"><span>Lucro:</span> <span id="semLucro" class="highlight">R$ 0,00</span></div>
+                <div class="stat-row"><span>Horas:</span> <span id="semHoras">0h</span></div>
+                <div class="stat-row"><span>Média Lucro/KM:</span> <span id="semKm">R$ 0,00</span></div>
             </div>
             <div class="stat-card">
                 <div class="stat-title">🗓️ Este Mês</div>
-                <div class="stat-row"><span>Lucro:</span> <span id="mesLucro">R$ 0,00</span></div>
-                <div class="stat-row"><span>Lucro/KM:</span> <span id="mesKm">R$ 0,00</span></div>
+                <div class="stat-row"><span>Lucro:</span> <span id="mesLucro" class="highlight">R$ 0,00</span></div>
+                <div class="stat-row"><span>Horas:</span> <span id="mesHoras">0h</span></div>
+                <div class="stat-row"><span>Média Lucro/KM:</span> <span id="mesKm">R$ 0,00</span></div>
             </div>
             <div class="stat-card">
                 <div class="stat-title">💰 Ano Atual</div>
-                <div class="stat-row"><span>Lucro Total:</span> <span id="anoLucro" style="color:var(--primary)">R$ 0,00</span></div>
+                <div class="stat-row"><span>Lucro Total:</span> <span id="anoLucro" class="highlight" style="color:#00ff88">R$ 0,00</span></div>
+                <div class="stat-row"><span>Horas Totais:</span> <span id="anoHoras">0h</span></div>
             </div>
         </div>
         <button class="btn-main btn-clear" onclick="limparHistorico()">ZERAR TUDO</button>
@@ -92,7 +96,7 @@
     function carregarTudo() {
         if(localStorage.getItem('pref_media')) document.getElementById('media').value = localStorage.getItem('pref_media');
         if(localStorage.getItem('pref_gas')) document.getElementById('gasolina').value = localStorage.getItem('pref_gas');
-        atualizarDahsboard();
+        atualizarDashboard();
     }
 
     function calcular() {
@@ -103,7 +107,7 @@
         const media = parseVal('media');
         const gasolina = parseVal('gasolina');
 
-        if(bruto <= 0 || km <= 0) { alert("Preencha Ganhos e KM!"); return; }
+        if(bruto <= 0 || km <= 0 || media <= 0) { alert("Preencha Ganhos, KM e Média!"); return; }
 
         const gastoGas = (km / media) * gasolina;
         const liquido = bruto - gastoGas - comida;
@@ -116,57 +120,70 @@
         document.getElementById('resKmDia').innerText = "R$ " + porKm.toFixed(2);
         document.getElementById('painelResultados').style.display = 'block';
 
-        tempEntry = { lucro: liquido, km: km, data: new Date().toISOString() };
+        tempEntry = { lucro: liquido, km: km, horas: horas, data: new Date().toISOString() };
     }
 
     function salvarNoHistorico() {
-        if(!tempEntry) { alert("Calcule antes!"); return; }
-        let hist = JSON.parse(localStorage.getItem('db_driver')) || [];
+        if(!tempEntry) { alert("Calcule antes de salvar!"); return; }
+        let hist = JSON.parse(localStorage.getItem('db_driver_v2')) || [];
         hist.push(tempEntry);
-        localStorage.setItem('db_driver', JSON.stringify(hist));
-        alert("Salvo!");
-        atualizarDahsboard();
+        localStorage.setItem('db_driver_v2', JSON.stringify(hist));
+        alert("Dados salvos com sucesso!");
+        tempEntry = null; // Limpa para evitar salvar duplicado
+        atualizarDashboard();
     }
 
-    function atualizarDahsboard() {
-        let hist = JSON.parse(localStorage.getItem('db_driver')) || [];
+    function atualizarDashboard() {
+        let hist = JSON.parse(localStorage.getItem('db_driver_v2')) || [];
         const agora = new Date();
         
         let stats = {
-            sem: { lucro: 0, km: 0 },
-            mes: { lucro: 0, km: 0 },
-            ano: { lucro: 0 }
+            sem: { lucro: 0, km: 0, horas: 0 },
+            mes: { lucro: 0, km: 0, horas: 0 },
+            ano: { lucro: 0, horas: 0 }
         };
 
         hist.forEach(item => {
             let d = new Date(item.data);
-            // Cálculo Semanal (últimos 7 dias)
+            
+            // Semanal (7 dias)
             if((agora - d) / (1000 * 60 * 60 * 24) <= 7) {
                 stats.sem.lucro += item.lucro;
                 stats.sem.km += item.km;
+                stats.sem.horas += (item.horas || 0);
             }
-            // Cálculo Mensal (mesmo mês e ano)
+            // Mensal
             if(d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear()) {
                 stats.mes.lucro += item.lucro;
                 stats.mes.km += item.km;
+                stats.mes.horas += (item.horas || 0);
             }
-            // Cálculo Anual
+            // Anual
             if(d.getFullYear() === agora.getFullYear()) {
                 stats.ano.lucro += item.lucro;
+                stats.ano.horas += (item.horas || 0);
             }
         });
 
+        // Atualiza Semana
         document.getElementById('semLucro').innerText = "R$ " + stats.sem.lucro.toFixed(2);
+        document.getElementById('semHoras').innerText = stats.sem.horas.toFixed(1) + "h";
         document.getElementById('semKm').innerText = "R$ " + (stats.sem.km > 0 ? (stats.sem.lucro / stats.sem.km).toFixed(2) : "0.00");
+
+        // Atualiza Mês
         document.getElementById('mesLucro').innerText = "R$ " + stats.mes.lucro.toFixed(2);
+        document.getElementById('mesHoras').innerText = stats.mes.horas.toFixed(1) + "h";
         document.getElementById('mesKm').innerText = "R$ " + (stats.mes.km > 0 ? (stats.mes.lucro / stats.mes.km).toFixed(2) : "0.00");
+
+        // Atualiza Ano
         document.getElementById('anoLucro').innerText = "R$ " + stats.ano.lucro.toFixed(2);
+        document.getElementById('anoHoras').innerText = stats.ano.horas.toFixed(1) + "h";
     }
 
     function limparHistorico() {
-        if(confirm("Zerar todos os dados salvos?")) {
-            localStorage.removeItem('db_driver');
-            atualizarDahsboard();
+        if(confirm("ATENÇÃO: Deseja apagar permanentemente todo o seu histórico acumulado?")) {
+            localStorage.removeItem('db_driver_v2');
+            atualizarDashboard();
         }
     }
 </script>
