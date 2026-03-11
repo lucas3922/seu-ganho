@@ -3,99 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Pro - Lucro Real</title>
-    
+    <title>Driver Pro - Gestão Total</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
-
     <style>
         :root { --primary: #00ff88; --secondary: #0088ff; --danger: #ff4444; --bg: #121212; --card: #1e1e1e; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; }
         .container { max-width: 450px; margin: auto; }
         h1 { color: var(--primary); text-align: center; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #888; font-size: 0.9em; margin-bottom: 20px; }
-        
         .input-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         label { display: block; margin: 10px 0 5px; color: var(--primary); font-weight: bold; font-size: 0.75em; text-transform: uppercase; }
         input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box; }
-        input:focus { border-color: var(--primary); outline: none; }
-        
         .btn-main { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
         .btn-calc { background: var(--primary); color: #121212; }
         .btn-save { background: var(--secondary); color: white; }
-        .btn-clear { background: var(--danger); color: white; margin-top: 20px; opacity: 0.8; font-size: 14px; }
-        
         .results { background: var(--card); padding: 15px; border-radius: 12px; border-left: 5px solid var(--primary); margin-top: 20px; display: none; }
         .res-item { display: flex; justify-content: space-between; margin: 8px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
         .val { font-weight: bold; color: var(--primary); }
-
         .history { margin-top: 30px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 10px; text-align: center; border-bottom: 3px solid var(--secondary); }
-        .stat-val { display: block; font-size: 1.1em; font-weight: bold; margin-top: 5px; color: var(--secondary); }
+        .stats-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+        .stat-card { background: var(--card); padding: 15px; border-radius: 10px; border-left: 3px solid var(--secondary); }
+        .stat-title { color: var(--secondary); font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
+        .stat-row { display: flex; justify-content: space-between; margin-top: 5px; }
+        .btn-clear { background: var(--danger); color: white; margin-top: 20px; opacity: 0.7; font-size: 14px; }
     </style>
 </head>
-<body onload="carregarPreferencias()">
+<body onload="carregarTudo()">
 
 <div class="container">
     <h1>🚗 Driver Pro</h1>
-    <div class="subtitle">Calculadora de Lucro e Gastos</div>
+    <div style="text-align:center; color:#888; font-size:0.8em; margin-bottom:20px;">Gestão Diária, Semanal, Mensal e Anual</div>
 
     <div class="input-group">
-        <label>💰 Ganho Bruto (App Uber/99)</label>
-        <input id="bruto" type="text" inputmode="decimal" placeholder="Ex: 450,50">
-        
-        <label>📏 KM Rodados Totais</label>
-        <input id="km" type="text" inputmode="decimal" placeholder="Ex: 150">
-        
+        <label>💰 Ganho Bruto (R$)</label>
+        <input id="bruto" type="text" inputmode="decimal" placeholder="0,00">
+        <label>📏 KM Rodados</label>
+        <input id="km" type="text" inputmode="decimal" placeholder="0">
         <label>⏱️ Horas Online</label>
-        <input id="horas" type="text" inputmode="decimal" placeholder="Ex: 9">
-        
-        <label>🍔 Alimentação / Outros Gastos</label>
-        <input id="comida" type="text" inputmode="decimal" placeholder="Ex: 30,00">
-
-        <label>⛽ Média (km/l) e Preço Litro</label>
+        <input id="horas" type="text" inputmode="decimal" placeholder="0">
+        <label>🍔 Alimentação/Extras (R$)</label>
+        <input id="comida" type="text" inputmode="decimal" placeholder="0,00">
+        <label>⛽ Média e Preço</label>
         <div style="display: flex; gap: 10px;">
-            <input id="media" type="text" inputmode="decimal" placeholder="Média">
-            <input id="gasolina" type="text" inputmode="decimal" placeholder="Preço R$">
+            <input id="media" type="text" inputmode="decimal" placeholder="Km/L">
+            <input id="gasolina" type="text" inputmode="decimal" placeholder="R$">
         </div>
     </div>
 
     <button class="btn-main btn-calc" onclick="calcular()">CALCULAR HOJE</button>
-    <button class="btn-main btn-save" onclick="salvarNoHistorico()">SALVAR NO ACUMULADO</button>
+    <button class="btn-main btn-save" onclick="salvarNoHistorico()">SALVAR NO HISTÓRICO</button>
 
     <div id="painelResultados" class="results">
-        <div class="res-item"><span>Total Bruto:</span> <span class="val" id="resBruto"></span></div>
-        <div class="res-item"><span>Gasto Combustível:</span> <span class="val" id="resGas"></span></div>
-        <div class="res-item"><span>LUCRO LÍQUIDO:</span> <span class="val" id="resLiq" style="font-size:1.3em"></span></div>
-        <hr style="border: 0; border-top: 1px solid #444;">
-        <div class="res-item"><span>Ganhos por Hora:</span> <span class="val" id="resHora"></span></div>
-        <div class="res-item"><span>Ganhos por KM:</span> <span class="val" id="resKm"></span></div>
+        <div class="res-item"><span>Lucro Líquido:</span> <span class="val" id="resLiq"></span></div>
+        <div class="res-item"><span>Lucro por KM:</span> <span class="val" id="resKmDia"></span></div>
     </div>
 
     <div class="history">
-        <h3>📊 Resumo Acumulado</h3>
+        <h3>📊 Resumos Acumulados</h3>
         <div class="stats-grid">
-            <div class="stat-card">Lucro Total<span id="totalLucro" class="stat-val">R$ 0,00</span></div>
-            <div class="stat-card">Horas Totais<span id="totalHoras" class="stat-val">0h</span></div>
+            <div class="stat-card">
+                <div class="stat-title">📅 Esta Semana</div>
+                <div class="stat-row"><span>Lucro:</span> <span id="semLucro">R$ 0,00</span></div>
+                <div class="stat-row"><span>Lucro/KM:</span> <span id="semKm">R$ 0,00</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">🗓️ Este Mês</div>
+                <div class="stat-row"><span>Lucro:</span> <span id="mesLucro">R$ 0,00</span></div>
+                <div class="stat-row"><span>Lucro/KM:</span> <span id="mesKm">R$ 0,00</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">💰 Ano Atual</div>
+                <div class="stat-row"><span>Lucro Total:</span> <span id="anoLucro" style="color:var(--primary)">R$ 0,00</span></div>
+            </div>
         </div>
-        <button class="btn-main btn-clear" onclick="limparHistorico()">ZERAR SEMANA/MÊS</button>
+        <button class="btn-main btn-clear" onclick="limparHistorico()">ZERAR TUDO</button>
     </div>
 </div>
 
 <script>
-    let resultadoCalculado = null;
+    let tempEntry = null;
 
     function parseVal(id) {
         let v = document.getElementById(id).value.replace(',', '.').trim();
         return v === "" ? 0 : parseFloat(v);
     }
 
-    function carregarPreferencias() {
+    function carregarTudo() {
         if(localStorage.getItem('pref_media')) document.getElementById('media').value = localStorage.getItem('pref_media');
         if(localStorage.getItem('pref_gas')) document.getElementById('gasolina').value = localStorage.getItem('pref_gas');
-        atualizarPainel();
+        atualizarDahsboard();
     }
 
     function calcular() {
@@ -106,53 +103,70 @@
         const media = parseVal('media');
         const gasolina = parseVal('gasolina');
 
-        if(bruto <= 0 || km <= 0 || media <= 0) {
-            alert("Por favor, preencha os ganhos, KM e média do veículo.");
-            return;
-        }
+        if(bruto <= 0 || km <= 0) { alert("Preencha Ganhos e KM!"); return; }
 
         const gastoGas = (km / media) * gasolina;
         const liquido = bruto - gastoGas - comida;
-        const porHora = horas > 0 ? liquido / horas : 0;
-        const porKm = km > 0 ? liquido / km : 0;
+        const porKm = liquido / km;
 
-        // Salva média e gasolina para facilitar o próximo uso
         localStorage.setItem('pref_media', media);
         localStorage.setItem('pref_gas', gasolina);
 
-        // Exibe resultados
-        document.getElementById('resBruto').innerText = "R$ " + bruto.toFixed(2);
-        document.getElementById('resGas').innerText = "R$ " + gastoGas.toFixed(2);
         document.getElementById('resLiq').innerText = "R$ " + liquido.toFixed(2);
-        document.getElementById('resHora').innerText = "R$ " + porHora.toFixed(2);
-        document.getElementById('resKm').innerText = "R$ " + porKm.toFixed(2);
+        document.getElementById('resKmDia').innerText = "R$ " + porKm.toFixed(2);
         document.getElementById('painelResultados').style.display = 'block';
 
-        resultadoCalculado = { lucro: liquido, horas: horas };
+        tempEntry = { lucro: liquido, km: km, data: new Date().toISOString() };
     }
 
     function salvarNoHistorico() {
-        if(!resultadoCalculado) { alert("Calcule primeiro o valor de hoje!"); return; }
-        
-        let hist = JSON.parse(localStorage.getItem('driver_pro_data')) || { lucro: 0, horas: 0 };
-        hist.lucro += resultadoCalculado.lucro;
-        hist.horas += resultadoCalculado.horas;
-        
-        localStorage.setItem('driver_pro_data', JSON.stringify(hist));
-        alert("Salvo com sucesso!");
-        atualizarPainel();
+        if(!tempEntry) { alert("Calcule antes!"); return; }
+        let hist = JSON.parse(localStorage.getItem('db_driver')) || [];
+        hist.push(tempEntry);
+        localStorage.setItem('db_driver', JSON.stringify(hist));
+        alert("Salvo!");
+        atualizarDahsboard();
     }
 
-    function atualizarPainel() {
-        let hist = JSON.parse(localStorage.getItem('driver_pro_data')) || { lucro: 0, horas: 0 };
-        document.getElementById('totalLucro').innerText = "R$ " + hist.lucro.toFixed(2);
-        document.getElementById('totalHoras').innerText = hist.horas.toFixed(1) + "h";
+    function atualizarDahsboard() {
+        let hist = JSON.parse(localStorage.getItem('db_driver')) || [];
+        const agora = new Date();
+        
+        let stats = {
+            sem: { lucro: 0, km: 0 },
+            mes: { lucro: 0, km: 0 },
+            ano: { lucro: 0 }
+        };
+
+        hist.forEach(item => {
+            let d = new Date(item.data);
+            // Cálculo Semanal (últimos 7 dias)
+            if((agora - d) / (1000 * 60 * 60 * 24) <= 7) {
+                stats.sem.lucro += item.lucro;
+                stats.sem.km += item.km;
+            }
+            // Cálculo Mensal (mesmo mês e ano)
+            if(d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear()) {
+                stats.mes.lucro += item.lucro;
+                stats.mes.km += item.km;
+            }
+            // Cálculo Anual
+            if(d.getFullYear() === agora.getFullYear()) {
+                stats.ano.lucro += item.lucro;
+            }
+        });
+
+        document.getElementById('semLucro').innerText = "R$ " + stats.sem.lucro.toFixed(2);
+        document.getElementById('semKm').innerText = "R$ " + (stats.sem.km > 0 ? (stats.sem.lucro / stats.sem.km).toFixed(2) : "0.00");
+        document.getElementById('mesLucro').innerText = "R$ " + stats.mes.lucro.toFixed(2);
+        document.getElementById('mesKm').innerText = "R$ " + (stats.mes.km > 0 ? (stats.mes.lucro / stats.mes.km).toFixed(2) : "0.00");
+        document.getElementById('anoLucro').innerText = "R$ " + stats.ano.lucro.toFixed(2);
     }
 
     function limparHistorico() {
-        if(confirm("Deseja zerar todo o acumulado?")) {
-            localStorage.removeItem('driver_pro_data');
-            atualizarPainel();
+        if(confirm("Zerar todos os dados salvos?")) {
+            localStorage.removeItem('db_driver');
+            atualizarDahsboard();
         }
     }
 </script>
