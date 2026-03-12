@@ -1,454 +1,67 @@
-# pubspec.yaml - Coloque isso no arquivo pubspec.yaml do seu projeto Flutter
-name: uber_financas
-description: App para gestão financeira de motoristas Uber.
-publish_to: 'none'
-version: 1.0.0+1
+import streamlit as st
+import pandas as pd
+from datetime import date
 
-environment:
-  sdk: '>=2.19.0 <3.0.0'
+# Configuração da Página
+st.set_page_config(page_title="Gestor Uber Pro", layout="wide")
 
-dependencies:
-  flutter:
-    sdk: flutter
-  firebase_core: ^2.24.2
-  cloud_firestore: ^4.15.3
-  firebase_auth: ^4.16.0
-  intl: ^0.18.1
-  shared_preferences: ^2.2.2
-  fl_chart: ^0.66.2
-  cupertino_icons: ^1.0.2
+st.title("🚖 Gestor Financeiro: Uber + Casa")
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
-flutter:
-  uses-material-design: true
-// lib/main.dart
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
-import 'package:uber_financas/firebase_options.dart'; // Gere isso com 'flutterfire configure'
-import 'package:uber_financas/screens/login_screen.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+# --- SIDEBAR: GESTÃO DE CONTAS DA CASA ---
+st.sidebar.header("🏠 Contas da Casa (Mensal)")
+contas = {
+    "Luz": st.sidebar.number_input("Luz", min_value=0.0, value=200.0),
+    "Água": st.sidebar.number_input("Água", min_value=0.0, value=100.0),
+    "Internet": st.sidebar.number_input("Internet", min_value=0.0, value=120.0),
+    "Aluguel": st.sidebar.number_input("Aluguel", min_value=0.0, value=1200.0),
+    "Mercado": st.sidebar.number_input("Mercado", min_value=0.0, value=800.0),
+    "Outros": st.sidebar.number_input("Outros", min_value=0.0, value=0.0),
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+total_despesas = sum(contas.values())
+dias_trabalho = st.sidebar.slider("Dias de trabalho no mês", 1, 31, 25)
+meta_diaria = total_despesas / dias_trabalho if dias_trabalho > 0 else 0
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Uber Finanças',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const LoginScreen(),
-    );
-  }
-}
-// lib/screens/login_screen.dart
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:uber_financas/screens/home_screen.dart';
+st.sidebar.divider()
+st.sidebar.metric("Total Despesas", f"R$ {total_despesas:,.2f}")
+st.sidebar.metric("Meta Diária Sugerida", f"R$ {meta_diaria:,.2f}")
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+# --- CORPO PRINCIPAL: LANÇAMENTO DIÁRIO ---
+col1, col2 = st.columns(2)
 
-  @override
-  _LoginScreenState createState() => _LoginScreenState();
-}
+with col1:
+    st.subheader("📝 Lançamento do Dia")
+    data_hoje = st.date_input("Data", date.today())
+    ganho_bruto = st.number_input("Ganho Bruto Total (App)", min_value=0.0)
+    km_rodado = st.number_input("KM Total Rodado", min_value=0.1)
+    horas = st.number_input("Horas Trabalhadas", min_value=0.1)
+    custo_km = st.number_input("Custo por KM (Combustível/Manutenção)", value=0.60)
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  String? _errorMessage;
+    # Cálculos Automáticos
+    custo_total = km_rodado * custo_km
+    ganho_liquido = ganho_bruto - custo_total
+    
+    # Métricas do Lançamento
+    km_bruto = ganho_bruto / km_rodado
+    km_liquido = ganho_liquido / km_rodado
+    hora_bruta = ganho_bruto / horas
+    hora_liquida = ganho_liquido / horas
 
-  Future<void> _login() async {
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Erro ao logar: $e';
-      });
-    }
-  }
+with col2:
+    st.subheader("📊 Performance do Lançamento")
+    st.write(f"*Ganho Líquido:* R$ {ganho_liquido:,.2f}")
+    st.write(f"*KM Bruto:* R$ {km_bruto:,.2f} / *KM Líquido:* R$ {km_liquido:,.2f}")
+    st.write(f"*Hora Bruta:* R$ {hora_bruta:,.2f} / *Hora Líquida:* R$ {hora_liquida:,.2f}")
+    
+    progresso = (ganho_liquido / total_despesas) if total_despesas > 0 else 0
+    st.progress(min(progresso, 1.0))
+    st.caption(f"Este ganho abateu {progresso*100:.1f}% das despesas fixas.")
 
-  Future<void> _register() async {
-    try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Erro ao registrar: $e';
-      });
-    }
-  }
+# --- ABATIMENTO E SALDO ---
+st.divider()
+st.subheader("📉 Saldo Devedor do Mês")
+saldo_restante = total_despesas - ganho_liquido # Exemplo simplificado para 1 lançamento
+st.warning(f"Faltam *R$ {max(0.0, saldo_restante):,.2f}* para cobrir as contas da casa este mês.")
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Senha'),
-              obscureText: true,
-            ),
-            if (_errorMessage != null) Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-            ElevatedButton(onPressed: _login, child: const Text('Entrar')),
-            ElevatedButton(onPressed: _register, child: const Text('Registrar')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-// lib/screens/home_screen.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:uber_financas/screens/lancamento_diario_screen.dart';
-import 'package:uber_financas/screens/gestor_despesas_screen.dart';
-import 'package:uber_financas/screens/relatorios_screen.dart';
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  Future<Map<String, dynamic>> _getDadosMesAtual() async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    String mesId = DateFormat('yyyy-MM').format(DateTime.now());
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('usuarios/$userId/despesas_mensais')
-        .doc(mesId)
-        .get();
-    return doc.data() as Map<String, dynamic>? ?? {};
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _getDadosMesAtual(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          double totalDespesas = snapshot.data?['total_despesas'] ?? 0;
-          double abatido = snapshot.data?['abatido'] ?? 0;
-          double metaDiaria = snapshot.data?['meta_diaria'] ?? 0;
-          double progresso = totalDespesas > 0 ? (abatido / totalDespesas) * 100 : 0;
-
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text('Meta Diária: ${NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(metaDiaria)}'),
-              Text('Despesas Totais: ${NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(totalDespesas)}'),
-              Text('Abatido: ${NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(abatido)}'),
-              Text('Progresso: ${progresso.toStringAsFixed(2)}%'),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LancamentoDiarioScreen())),
-                child: const Text('Novo Lançamento Diário'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GestorDespesasScreen())),
-                child: const Text('Gerenciar Despesas'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RelatoriosScreen())),
-                child: const Text('Relatórios'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-// lib/screens/lancamento_diario_screen.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
-class LancamentoDiarioScreen extends StatefulWidget {
-  const LancamentoDiarioScreen({super.key});
-
-  @override
-  _LancamentoDiarioScreenState createState() => _LancamentoDiarioScreenState();
-}
-
-class _LancamentoDiarioScreenState extends State<LancamentoDiarioScreen> {
-  final _formKey = GlobalKey<FormState>();
-  double ganhosBrutos = 0;
-  double kmRodados = 0;
-  double horasTrabalhadas = 0;
-  double descontos = 0;
-  DateTime data = DateTime.now();
-
-  final NumberFormat moeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-
-  void _salvarLancamento() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      double ganhosLiquidos = ganhosBrutos - descontos;
-      double ganhoKmBruto = kmRodados > 0 ? ganhosBrutos / kmRodados : 0;
-      double ganhoKmLiquido = kmRodados > 0 ? ganhosLiquidos / kmRodados : 0;
-      double ganhoHoraBruto = horasTrabalhadas > 0 ? ganhosBrutos / horasTrabalhadas : 0;
-      double ganhoHoraLiquido = horasTrabalhadas > 0 ? ganhosLiquidos / horasTrabalhadas : 0;
-
-      String userId = FirebaseAuth.instance.currentUser!.uid;
-      String docId = DateFormat('yyyy-MM-dd').format(data);
-
-      await FirebaseFirestore.instance.collection('usuarios/$userId/lancamentos_diarios').doc(docId).set({
-        'data': Timestamp.fromDate(data),
-        'ganhos_brutos': ganhosBrutos,
-        'ganhos_liquidos': ganhosLiquidos,
-        'km_rodados': kmRodados,
-        'horas_trabalhadas': horasTrabalhadas,
-        'descontos': descontos,
-        'ganho_km_bruto': ganhoKmBruto,
-        'ganho_km_liquido': ganhoKmLiquido,
-        'ganho_hora_bruto': ganhoHoraBruto,
-        'ganho_hora_liquido': ganhoHoraLiquido,
-      });
-
-      // Abate despesas
-      String mesId = DateFormat('yyyy-MM').format(data);
-      DocumentReference despesaRef = FirebaseFirestore.instance.collection('usuarios/$userId/despesas_mensais').doc(mesId);
-      DocumentSnapshot despesaDoc = await despesaRef.get();
-      if (despesaDoc.exists) {
-        double abatidoAtual = despesaDoc['abatido'] ?? 0;
-        await despesaRef.update({'abatido': abatidoAtual + ganhosLiquidos});
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lançamento salvo!')));
-      Navigator.pop(context);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Lançamento Diário')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'Ganhos Brutos (R\$)'),
-              keyboardType: TextInputType.number,
-              onSaved: (value) => ganhosBrutos = double.tryParse(value ?? '0') ?? 0,
-              validator: (value) => value!.isEmpty ? 'Obrigatório' : null,
-            ),
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'KM Rodados'),
-              keyboardType: TextInputType.number,
-              onSaved: (value) => kmRodados = double.tryParse(value ?? '0') ?? 0,
-            ),
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'Horas Trabalhadas'),
-              keyboardType: TextInputType.number,
-              onSaved: (value) => horasTrabalhadas = double.tryParse(value ?? '0') ?? 0,
-            ),
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'Descontos (R\$)'),
-              keyboardType: TextInputType.number,
-              onSaved: (value) => descontos = double.tryParse(value ?? '0') ?? 0,
-            ),
-            ElevatedButton(onPressed: _salvarLancamento, child: const Text('Salvar')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-// lib/screens/gestor_despesas_screen.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
-class GestorDespesasScreen extends StatefulWidget {
-  const GestorDespesasScreen({super.key});
-
-  @override
-  _GestorDespesasScreenState createState() => _GestorDespesasScreenState();
-}
-
-class _GestorDespesasScreenState extends State<GestorDespesasScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final Map<String, double> _despesas = {};
-  final List<String> _categorias = ['Luz', 'Água', 'Internet', 'Aluguel', 'Mercado', 'Outros'];
-  double _diasUteis = 30; // Configurável
-
-  void _adicionarDespesa(String categoria, double valor) {
-    setState(() {
-      _despesas[categoria] = valor;
-    });
-  }
-
-  void _salvarDespesas() async {
-    double totalDespesas = _despesas.values.fold(0, (sum, item) => sum + item);
-    double metaDiaria = totalDespesas / _diasUteis;
-
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    String mesId = DateFormat('yyyy-MM').format(DateTime.now());
-
-    await FirebaseFirestore.instance.collection('usuarios/$userId/despesas_mensais').doc(mesId).set({
-      'total_despesas': totalDespesas,
-      'despesas_detalhadas': _despesas,
-      'meta_diaria': metaDiaria,
-      'abatido': 0,
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Despesas salvas!')));
-    Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Gestor de Despesas')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            ..._categorias.map((cat) => Row(
-                  children: [
-                    Expanded(child: Text(cat)),
-                    SizedBox(
-                      width: 100,
-                      child: TextFormField(
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) => _adicionarDespesa(cat, double.tryParse(value) ?? 0),
-                      ),
-                    ),
-                  ],
-                )),
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'Dias Úteis no Mês'),
-              keyboardType: TextInputType.number,
-              initialValue: _diasUteis.toString(),
-              onChanged: (value) => _diasUteis = double.tryParse(value) ?? 30,
-            ),
-            ElevatedButton(onPressed: _salvarDespesas, child: const Text('Salvar Despesas')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-// lib/screens/relatorios_screen.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
-class RelatoriosScreen extends StatelessWidget {
-  const RelatoriosScreen({super.key});
-
-  Stream<QuerySnapshot> _getLancamentosSemanais() {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    DateTime agora = DateTime.now();
-    DateTime inicioSemana = agora.subtract(Duration(days: agora.weekday - 1));
-    return FirebaseFirestore.instance
-        .collection('usuarios/$userId/lancamentos_diarios')
-        .where('data', isGreaterThanOrEqualTo: Timestamp.fromDate(inicioSemana))
-        .snapshots();
-  }
-
-  Map<String, double> _calcularTotais(QuerySnapshot snapshot) {
-    double brutos = 0, liquidos = 0, km = 0, horas = 0;
-    for (var doc in snapshot.docs) {
-      brutos += doc['ganhos_brutos'] ?? 0;
-      liquidos += doc['ganhos_liquidos'] ?? 0;
-      km += doc['km_rodados'] ?? 0;
-      horas += doc['horas_trabalhadas'] ?? 0;
-    }
-    return {
-      'brutos': brutos,
-      'liquidos': liquidos,
-      'km': km,
-      'horas': horas,
-      'km_bruto': km > 0 ? brutos / km : 0,
-      'km_liquido': km > 0 ? liquidos / km : 0,
-      'hora_bruto': horas > 0 ? brutos / horas : 0,
-      'hora_liquido': horas > 0 ? liquidos / horas : 0,
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Relatórios Semanais')),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _getLancamentosSemanais(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('Sem dados'));
-          }
-
-          var totais = _calcularTotais(snapshot.data!);
-          final moeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text('Ganhos Brutos: ${moeda.format(totais['brutos'])}'),
-              Text('Ganhos Líquidos: ${moeda.format(totais['liquidos'])}'),
-              Text('Ganho por KM Bruto: ${moeda.format(totais['km_bruto'])}'),
-              Text('Ganho por KM Líquido: ${moeda.format(totais['km_liquido'])}'),
-              Text('Horas Trabalhadas: ${totais['horas'].toStringAsFixed(2)}'),
-              Text('Ganho por Hora Bruto: ${moeda.format(totais['hora_bruto'])}'),
-              Text('Ganho por Hora Líquido: ${moeda.format(totais['hora_liquido'])}'),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 200,
-                child: PieChart(
-                  PieChartData(
-                    sections: [
-                      PieChartSectionData(value: totais['brutos']!, title: 'Brutos', color: Colors.blue),
-                      PieChartSectionData(value: totais['liquidos']!, title: 'Líquidos', color: Colors.green),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
+if st.button("Salvar Lançamento Diário"):
+    st.success("Dados simulados e salvos com sucesso! (Para banco de dados real, conecte a um CSV ou SQL)")
