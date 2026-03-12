@@ -78,74 +78,72 @@ display:none;
 <input id="gas" type="number">
 
 <button id="calcular">CALCULAR</button>
-
 <button id="salvar">SALVAR</button>
 
 <div id="resultado"></div>
 
 <script>
 
-let ultimoCalculo=null
+document.addEventListener("DOMContentLoaded", function(){
 
-const calcularBtn=document.getElementById("calcular")
-const salvarBtn=document.getElementById("salvar")
+let ultimoCalculo = null
 
-calcularBtn.addEventListener("click",function(){
+const calcularBtn = document.getElementById("calcular")
+const salvarBtn = document.getElementById("salvar")
 
-const bruto=parseFloat(document.getElementById("bruto").value)||0
-const km=parseFloat(document.getElementById("km").value)||0
-const horas=parseFloat(document.getElementById("horas").value)||0
-const comida=parseFloat(document.getElementById("comida").value)||0
-const media=parseFloat(document.getElementById("media").value)||0
-const gas=parseFloat(document.getElementById("gas").value)||0
+calcularBtn.addEventListener("click", function(){
 
-if(bruto<=0||km<=0||media<=0){
+const bruto = parseFloat(document.getElementById("bruto").value) || 0
+const km = parseFloat(document.getElementById("km").value) || 0
+const horas = parseFloat(document.getElementById("horas").value) || 0
+const comida = parseFloat(document.getElementById("comida").value) || 0
+const media = parseFloat(document.getElementById("media").value) || 0
+const gas = parseFloat(document.getElementById("gas").value) || 0
+
+if(bruto <= 0 || km <= 0 || media <= 0){
 
 alert("Preencha Bruto, KM e Média")
-
 return
 
 }
 
-const custoGas=(km/media)*gas
+const custoGas = (km / media) * gas
+const liquido = bruto - custoGas - comida
 
-const liquido=bruto-custoGas-comida
+const brutoKm = bruto / km
+const liquidoHora = horas > 0 ? liquido / horas : 0
 
-const brutoKm=bruto/km
+const box = document.getElementById("resultado")
 
-const liquidoHora=horas>0?liquido/horas:0
+box.style.display = "block"
 
-const box=document.getElementById("resultado")
+box.innerHTML =
+"Lucro: R$ " + liquido.toFixed(2) + "<br>" +
+"Bruto/KM: R$ " + brutoKm.toFixed(2) + "<br>" +
+"Líquido/Hora: R$ " + liquidoHora.toFixed(2)
 
-box.style.display="block"
-
-box.innerHTML=
-
-"Lucro: R$ "+liquido.toFixed(2)+"<br>"+
-"Bruto/KM: R$ "+brutoKm.toFixed(2)+"<br>"+
-"Líquido/Hora: R$ "+liquidoHora.toFixed(2)
-
-ultimoCalculo={bruto,km,horas,liquido}
+ultimoCalculo = { bruto, km, horas, liquido }
 
 })
 
-salvarBtn.addEventListener("click",function(){
+salvarBtn.addEventListener("click", function(){
 
 if(!ultimoCalculo){
 
 alert("Calcule antes")
-
 return
 
 }
 
-let historico=JSON.parse(localStorage.getItem("driver_hist"))||[]
+let historico = JSON.parse(localStorage.getItem("driver_hist")) || []
 
 historico.push(ultimoCalculo)
 
-localStorage.setItem("driver_hist",JSON.stringify(historico))
+localStorage.setItem("driver_hist", JSON.stringify(historico))
 
 alert("Salvo!")
+
+})
 
 })
 
