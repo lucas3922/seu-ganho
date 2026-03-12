@@ -3,9 +3,11 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Driver Elite</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
@@ -13,7 +15,21 @@ body{
 font-family:Arial;
 background:#121212;
 color:white;
-padding:20px;
+margin:0;
+padding:15px;
+max-width:450px;
+margin:auto;
+}
+
+h2{
+text-align:center;
+}
+
+.card{
+background:#1e1e1e;
+padding:15px;
+border-radius:10px;
+margin-bottom:15px;
 }
 
 input{
@@ -29,123 +45,334 @@ color:white;
 button{
 width:100%;
 padding:12px;
-margin-bottom:10px;
 border:none;
 border-radius:8px;
+margin-bottom:10px;
 font-weight:bold;
 }
 
-#calcular{
+.calc{
 background:#00ff88;
 color:black;
 }
 
-#salvar{
+.save{
 background:#0088ff;
 color:white;
 }
 
+.turno{
+background:#ffaa00;
+color:black;
+}
+
+.stat{
+background:#252525;
+padding:8px;
+border-radius:6px;
+margin-bottom:5px;
+}
+
 #resultado{
-background:#1e1e1e;
-padding:15px;
-border-radius:10px;
-display:none;
+margin-top:10px;
 }
 
 </style>
+
 </head>
 
 <body>
 
 <h2>Driver Elite</h2>
 
-<label>Ganho Bruto</label>
-<input id="bruto" type="number">
+<div class="card">
 
-<label>KM Rodados</label>
-<input id="km" type="number">
+<button class="turno" onclick="iniciarTurno()">INICIAR TURNO</button>
 
-<label>Horas</label>
-<input id="horas" type="number">
+<div id="statusTurno">Turno parado</div>
 
-<label>Alimentação</label>
-<input id="comida" type="number">
+</div>
 
-<label>Média KM/L</label>
-<input id="media" type="number">
 
-<label>Preço Gasolina</label>
-<input id="gas" type="number">
+<div class="card">
 
-<button id="calcular">CALCULAR</button>
-<button id="salvar">SALVAR</button>
+<h3>Registrar ganhos</h3>
+
+<input id="bruto" placeholder="Ganho bruto">
+
+<input id="km" placeholder="KM rodados">
+
+<input id="comida" placeholder="Alimentação">
+
+<input id="media" placeholder="KM/L">
+
+<input id="gas" placeholder="Preço gasolina">
+
+<button class="calc" onclick="calcular()">CALCULAR</button>
+
+<button class="save" onclick="salvar()">SALVAR</button>
 
 <div id="resultado"></div>
 
+</div>
+
+
+<div class="card">
+
+<h3>Dívida mensal</h3>
+
+<div id="divida"></div>
+
+<div id="meta"></div>
+
+</div>
+
+
+<div class="card">
+
+<h3>Estatísticas</h3>
+
+<div id="stats"></div>
+
+</div>
+
+
+<div class="card">
+
+<h3>Gráfico de ganhos</h3>
+
+<canvas id="grafico"></canvas>
+
+</div>
+
+
+<div class="card">
+
+<h3>Contas da casa</h3>
+
+<input id="nomeConta" placeholder="Nome da conta">
+
+<input id="valorConta" placeholder="Valor">
+
+<button onclick="addConta()">Adicionar conta</button>
+
+<div id="listaContas"></div>
+
+</div>
+
+
 <script>
 
-document.addEventListener("DOMContentLoaded", function(){
+let corridas = JSON.parse(localStorage.getItem("corridas")) || []
+let contas = JSON.parse(localStorage.getItem("contas")) || []
 
-let ultimoCalculo = null
+let inicioTurno = null
+let ultimo = null
+let chart
 
-const calcularBtn = document.getElementById("calcular")
-const salvarBtn = document.getElementById("salvar")
+function iniciarTurno(){
 
-calcularBtn.addEventListener("click", function(){
+inicioTurno = Date.now()
 
-const bruto = parseFloat(document.getElementById("bruto").value) || 0
-const km = parseFloat(document.getElementById("km").value) || 0
-const horas = parseFloat(document.getElementById("horas").value) || 0
-const comida = parseFloat(document.getElementById("comida").value) || 0
-const media = parseFloat(document.getElementById("media").value) || 0
-const gas = parseFloat(document.getElementById("gas").value) || 0
+statusTurno.innerText="Turno iniciado"
 
-if(bruto <= 0 || km <= 0 || media <= 0){
+}
 
-alert("Preencha Bruto, KM e Média")
+function calcular(){
+
+let bruto=parseFloat(bruto.value)||0
+let km=parseFloat(km.value)||0
+let comida=parseFloat(comida.value)||0
+let media=parseFloat(media.value)||0
+let gas=parseFloat(gas.value)||0
+
+if(bruto<=0||km<=0||media<=0){
+
+alert("Preencha bruto, km e média")
+
 return
 
 }
 
-const custoGas = (km / media) * gas
-const liquido = bruto - custoGas - comida
+let custoGas=(km/media)*gas
 
-const brutoKm = bruto / km
-const liquidoHora = horas > 0 ? liquido / horas : 0
+let liquido=bruto-custoGas-comida
 
-const box = document.getElementById("resultado")
+let brutoKm=bruto/km
 
-box.style.display = "block"
+let liquidoKm=liquido/km
 
-box.innerHTML =
-"Lucro: R$ " + liquido.toFixed(2) + "<br>" +
-"Bruto/KM: R$ " + brutoKm.toFixed(2) + "<br>" +
-"Líquido/Hora: R$ " + liquidoHora.toFixed(2)
+let horas=0
 
-ultimoCalculo = { bruto, km, horas, liquido }
+if(inicioTurno){
 
-})
+horas=(Date.now()-inicioTurno)/3600000
 
-salvarBtn.addEventListener("click", function(){
+}
 
-if(!ultimoCalculo){
+let liquidoHora=horas>0?liquido/horas:0
+
+resultado.innerHTML=
+
+"Lucro líquido: R$ "+liquido.toFixed(2)+"<br>"+
+"Bruto por KM: R$ "+brutoKm.toFixed(2)+"<br>"+
+"Líquido por KM: R$ "+liquidoKm.toFixed(2)+"<br>"+
+"Líquido por hora: R$ "+liquidoHora.toFixed(2)
+
+ultimo={
+
+bruto,
+km,
+liquido,
+data:Date.now()
+
+}
+
+}
+
+function salvar(){
+
+if(!ultimo){
 
 alert("Calcule antes")
+
 return
 
 }
 
-let historico = JSON.parse(localStorage.getItem("driver_hist")) || []
+corridas.push(ultimo)
 
-historico.push(ultimoCalculo)
+localStorage.setItem("corridas",JSON.stringify(corridas))
 
-localStorage.setItem("driver_hist", JSON.stringify(historico))
+inicioTurno=null
 
-alert("Salvo!")
+statusTurno.innerText="Turno finalizado"
+
+atualizar()
+
+atualizarGrafico()
+
+}
+
+function addConta(){
+
+let nome=nomeConta.value
+
+let valor=parseFloat(valorConta.value)||0
+
+if(!nome||valor<=0)return
+
+contas.push({nome,valor})
+
+localStorage.setItem("contas",JSON.stringify(contas))
+
+atualizar()
+
+}
+
+function atualizar(){
+
+let totalContas=0
+
+contas.forEach(c=>totalContas+=c.valor)
+
+let pago=0
+
+corridas.forEach(c=>pago+=c.liquido)
+
+let resto=totalContas-pago
+
+if(resto<0)resto=0
+
+divida.innerText="Restante: R$ "+resto.toFixed(2)
+
+meta.innerText="Meta diária (22 dias): R$ "+(resto/22).toFixed(2)
+
+listaContas.innerHTML=""
+
+contas.forEach(c=>{
+
+listaContas.innerHTML+=
+
+"<div class='stat'>"+c.nome+" - R$ "+c.valor+"</div>"
 
 })
 
+let totalKm=0
+let totalBruto=0
+let totalLiquido=0
+
+corridas.forEach(c=>{
+
+totalKm+=c.km
+totalBruto+=c.bruto
+totalLiquido+=c.liquido
+
 })
+
+let brutoKm=totalKm?totalBruto/totalKm:0
+let liquidoKm=totalKm?totalLiquido/totalKm:0
+
+stats.innerHTML=
+
+"<div class='stat'>Total KM: "+totalKm.toFixed(1)+"</div>"+
+"<div class='stat'>Bruto por KM: R$ "+brutoKm.toFixed(2)+"</div>"+
+"<div class='stat'>Líquido por KM: R$ "+liquidoKm.toFixed(2)+"</div>"
+
+}
+
+function atualizarGrafico(){
+
+let labels=[]
+let valores=[]
+
+corridas.slice(-7).forEach(c=>{
+
+let d=new Date(c.data)
+
+labels.push(d.getDate()+"/"+(d.getMonth()+1))
+
+valores.push(c.liquido)
+
+})
+
+let ctx=document.getElementById("grafico")
+
+if(chart) chart.destroy()
+
+chart=new Chart(ctx,{
+
+type:'line',
+
+data:{
+
+labels:labels,
+
+datasets:[{
+
+label:'Lucro diário',
+
+data:valores,
+
+borderColor:'#00ff88',
+
+backgroundColor:'rgba(0,255,136,0.2)',
+
+tension:0.3
+
+}]
+
+},
+
+options:{responsive:true}
+
+})
+
+}
+
+atualizar()
+
+atualizarGrafico()
 
 </script>
 
