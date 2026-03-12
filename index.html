@@ -1,67 +1,165 @@
 import streamlit as st
 import pandas as pd
-from datetime import date
+import datetime
+import os
+import plotly.express as px
 
-# Configuração da Página
-st.set_page_config(page_title="Gestor Uber Pro", layout="wide")
+st.set_page_config(page_title="Gestor Motorista Uber", layout="wide")
 
-st.title("🚖 Gestor Financeiro: Uber + Casa")
+st.title("🚖 Gestor Financeiro do Motorista")
 
-# --- SIDEBAR: GESTÃO DE CONTAS DA CASA ---
-st.sidebar.header("🏠 Contas da Casa (Mensal)")
-contas = {
-    "Luz": st.sidebar.number_input("Luz", min_value=0.0, value=200.0),
-    "Água": st.sidebar.number_input("Água", min_value=0.0, value=100.0),
-    "Internet": st.sidebar.number_input("Internet", min_value=0.0, value=120.0),
-    "Aluguel": st.sidebar.number_input("Aluguel", min_value=0.0, value=1200.0),
-    "Mercado": st.sidebar.number_input("Mercado", min_value=0.0, value=800.0),
-    "Outros": st.sidebar.number_input("Outros", min_value=0.0, value=0.0),
-}
+arquivo = "historico_motorista.csv"
 
-total_despesas = sum(contas.values())
-dias_trabalho = st.sidebar.slider("Dias de trabalho no mês", 1, 31, 25)
-meta_diaria = total_despesas / dias_trabalho if dias_trabalho > 0 else 0
+if os.path.exists(arquivo):
+    df = pd.read_csv(arquivo)
+else:
+    df = pd.DataFrame(columns=[
+        "data","uber","noventa_nove","km","horas",
+        "combustivel","bruto","liquido"
+    ])
 
-st.sidebar.divider()
-st.sidebar.metric("Total Despesas", f"R$ {total_despesas:,.2f}")
-st.sidebar.metric("Meta Diária Sugerida", f"R$ {meta_diaria:,.2f}")
+# ---------------------------
+# CONTAS DA CASA
+# ---------------------------
 
-# --- CORPO PRINCIPAL: LANÇAMENTO DIÁRIO ---
-col1, col2 = st.columns(2)
+st.sidebar.header("🏠 Contas da Casa")
 
-with col1:
-    st.subheader("📝 Lançamento do Dia")
-    data_hoje = st.date_input("Data", date.today())
-    ganho_bruto = st.number_input("Ganho Bruto Total (App)", min_value=0.0)
-    km_rodado = st.number_input("KM Total Rodado", min_value=0.1)
-    horas = st.number_input("Horas Trabalhadas", min_value=0.1)
-    custo_km = st.number_input("Custo por KM (Combustível/Manutenção)", value=0.60)
+luz = st.sidebar.number_input("Luz",0.0)
+agua = st.sidebar.number_input("Água",0.0)
+internet = st.sidebar.number_input("Internet",0.0)
+aluguel = st.sidebar.number_input("Aluguel",0.0)
+mercado = st.sidebar.number_input("Mercado",0.0)
+outros = st.sidebar.number_input("Outros",0.0)
 
-    # Cálculos Automáticos
-    custo_total = km_rodado * custo_km
-    ganho_liquido = ganho_bruto - custo_total
-    
-    # Métricas do Lançamento
-    km_bruto = ganho_bruto / km_rodado
-    km_liquido = ganho_liquido / km_rodado
-    hora_bruta = ganho_bruto / horas
-    hora_liquida = ganho_liquido / horas
+despesa_mensal = luz+agua+internet+aluguel+mercado+outros
 
-with col2:
-    st.subheader("📊 Performance do Lançamento")
-    st.write(f"*Ganho Líquido:* R$ {ganho_liquido:,.2f}")
-    st.write(f"*KM Bruto:* R$ {km_bruto:,.2f} / *KM Líquido:* R$ {km_liquido:,.2f}")
-    st.write(f"*Hora Bruta:* R$ {hora_bruta:,.2f} / *Hora Líquida:* R$ {hora_liquida:,.2f}")
-    
-    progresso = (ganho_liquido / total_despesas) if total_despesas > 0 else 0
-    st.progress(min(progresso, 1.0))
-    st.caption(f"Este ganho abateu {progresso*100:.1f}% das despesas fixas.")
+meta_diaria = despesa_mensal/30 if despesa_mensal>0 else 0
 
-# --- ABATIMENTO E SALDO ---
-st.divider()
-st.subheader("📉 Saldo Devedor do Mês")
-saldo_restante = total_despesas - ganho_liquido # Exemplo simplificado para 1 lançamento
-st.warning(f"Faltam *R$ {max(0.0, saldo_restante):,.2f}* para cobrir as contas da casa este mês.")
+st.sidebar.write("### 💸 Despesa mensal:", round(despesa_mensal,2))
+st.sidebar.write("🎯 Meta diária:", round(meta_diaria,2))
 
-if st.button("Salvar Lançamento Diário"):
-    st.success("Dados simulados e salvos com sucesso! (Para banco de dados real, conecte a um CSV ou SQL)")
+# ---------------------------
+# INICIAR TURNO
+# ---------------------------
+
+st.header("⏱ Turno")
+
+if "inicio_turno" not in st.session_state:
+    st.session_state.inicio_turno = None
+
+if st.button("▶️ Iniciar turno"):
+    st.session_state.inicio_turno = datetime.datetime.now()
+
+if st.button("⏹ Encerrar turno"):
+    if st.session_state.inicio_turno:
+        fim = datetime.datetime.now()
+        horas = (fim - st.session_state.inicio_turno).seconds / 3600
+        st.session_state.horas_trabalhadas = horas
+
+st.write("Horas trabalhadas:", st.session_state.get("horas_trabalhadas",0))
+
+# ---------------------------
+# LANÇAMENTO DIÁRIO
+# ---------------------------
+
+st.header("📊 Lançamento do Dia")
+
+col1,col2,col3 = st.columns(3)
+
+uber = col1.number_input("Ganho Uber",0.0)
+noventa_nove = col2.number_input("Ganho 99",0.0)
+km = col3.number_input("Km rodados",0.0)
+
+col4,col5 = st.columns(2)
+
+consumo = col4.number_input("Consumo do carro km/L",0.0)
+gasolina = col5.number_input("Preço gasolina",0.0)
+
+horas = st.session_state.get("horas_trabalhadas",0)
+
+# cálculos
+
+litros = km/consumo if consumo>0 else 0
+combustivel = litros*gasolina
+
+bruto = uber+noventa_nove
+liquido = bruto-combustivel
+
+km_bruto = bruto/km if km>0 else 0
+km_liquido = liquido/km if km>0 else 0
+
+hora_bruto = bruto/horas if horas>0 else 0
+hora_liquido = liquido/horas if horas>0 else 0
+
+st.subheader("📈 Resultado")
+
+c1,c2,c3 = st.columns(3)
+
+c1.metric("💰 Bruto",round(bruto,2))
+c2.metric("💵 Líquido",round(liquido,2))
+c3.metric("⛽ Combustível",round(combustivel,2))
+
+c4,c5,c6 = st.columns(3)
+
+c4.metric("🚗 KM Bruto",round(km_bruto,2))
+c5.metric("🚗 KM Líquido",round(km_liquido,2))
+c6.metric("⏱ Hora Líquida",round(hora_liquido,2))
+
+# salvar
+
+if st.button("💾 Salvar Dia"):
+
+    novo = pd.DataFrame({
+        "data":[datetime.date.today()],
+        "uber":[uber],
+        "noventa_nove":[noventa_nove],
+        "km":[km],
+        "horas":[horas],
+        "combustivel":[combustivel],
+        "bruto":[bruto],
+        "liquido":[liquido]
+    })
+
+    df = pd.concat([df,novo],ignore_index=True)
+    df.to_csv(arquivo,index=False)
+
+    st.success("Dia salvo!")
+
+# ---------------------------
+# RELATÓRIOS
+# ---------------------------
+
+if len(df)>0:
+
+    st.header("📅 Relatórios")
+
+    df["data"] = pd.to_datetime(df["data"])
+
+    bruto_total = df["bruto"].sum()
+    liquido_total = df["liquido"].sum()
+
+    km_total = df["km"].sum()
+    horas_total = df["horas"].sum()
+
+    st.subheader("Totais")
+
+    a,b,c,d = st.columns(4)
+
+    a.metric("Bruto total",round(bruto_total,2))
+    b.metric("Líquido total",round(liquido_total,2))
+    c.metric("KM total",round(km_total,2))
+    d.metric("Horas totais",round(horas_total,2))
+
+    st.subheader("📊 Gráfico de ganhos")
+
+    graf = px.line(df,x="data",y="liquido",title="Lucro diário")
+
+    st.plotly_chart(graf,use_container_width=True)
+
+    st.subheader("📆 Relatório mensal")
+
+    df["mes"] = df["data"].dt.to_period("M")
+
+    mensal = df.groupby("mes").sum(numeric_only=True)
+
+    st.dataframe(mensal)
