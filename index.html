@@ -1,224 +1,509 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Driver Elite v6</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <style>
-        :root { --primary: #00ff88; --secondary: #0088ff; --danger: #ff4444; --bg: #121212; --card: #1e1e1e; }
-        body { font-family: sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; -webkit-tap-highlight-color: transparent; }
-        .container { max-width: 450px; margin: auto; }
-        
-        /* Dashboard */
-        .fin-card { background: #1e1e1e; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; text-align: center; }
-        .fin-val { font-size: 1.6em; font-weight: bold; display: block; color: var(--danger); margin: 5px 0; }
-        
-        /* Tabs */
-        .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 15px 5px; border: none; border-radius: 8px; background: #333; color: #888; font-weight: bold; cursor: pointer; }
-        .tab-btn.active { background: var(--secondary); color: white; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-        /* Inputs */
-        .input-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: var(--primary); font-size: 11px; text-transform: uppercase; font-weight: bold; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
-        
-        /* Buttons */
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-bottom: 10px; cursor: pointer; display: block; }
-        .btn-calc { background: var(--primary); color: #121212; }
-        .btn-save { background: var(--secondary); color: white; }
-        
-        /* Stats */
-        .results { background: #252525; padding: 15px; border-radius: 12px; margin-top: 10px; display: none; border-left: 4px solid var(--primary); }
-        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333; }
-        .stat-card h4 { margin: 0 0 10px 0; color: var(--secondary); text-transform: uppercase; font-size: 12px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .item { background: #252525; padding: 8px; border-radius: 6px; }
-        .item span { font-size: 10px; color: #888; display: block; }
-        .item b { font-size: 14px; color: #fff; }
+<title>Driver Elite v6</title>
 
-        .bill { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 5px; }
-        .hidden { display: none !important; }
-    </style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<style>
+
+:root{
+--primary:#00ff88;
+--secondary:#0088ff;
+--danger:#ff4444;
+--bg:#121212;
+--card:#1e1e1e;
+}
+
+body{
+font-family:sans-serif;
+background:var(--bg);
+color:white;
+margin:0;
+padding:15px;
+}
+
+.container{
+max-width:450px;
+margin:auto;
+}
+
+.fin-card{
+background:#1e1e1e;
+padding:15px;
+border-radius:15px;
+margin-bottom:15px;
+border:1px solid #333;
+text-align:center;
+}
+
+.fin-val{
+font-size:1.6em;
+font-weight:bold;
+display:block;
+color:var(--danger);
+margin:5px 0;
+}
+
+.tabs{
+display:flex;
+gap:5px;
+margin-bottom:15px;
+}
+
+.tab-btn{
+flex:1;
+padding:15px 5px;
+border:none;
+border-radius:8px;
+background:#333;
+color:#888;
+font-weight:bold;
+cursor:pointer;
+}
+
+.tab-btn.active{
+background:var(--secondary);
+color:white;
+}
+
+.input-group{
+background:var(--card);
+padding:15px;
+border-radius:12px;
+margin-bottom:15px;
+}
+
+label{
+display:block;
+margin-bottom:5px;
+color:var(--primary);
+font-size:11px;
+text-transform:uppercase;
+font-weight:bold;
+}
+
+input{
+width:100%;
+padding:12px;
+border-radius:8px;
+border:1px solid #333;
+background:#2a2a2a;
+color:white;
+font-size:16px;
+box-sizing:border-box;
+margin-bottom:10px;
+}
+
+.btn{
+width:100%;
+padding:15px;
+border:none;
+border-radius:8px;
+font-size:16px;
+font-weight:bold;
+margin-bottom:10px;
+cursor:pointer;
+}
+
+.btn-calc{
+background:var(--primary);
+color:#121212;
+}
+
+.btn-save{
+background:var(--secondary);
+color:white;
+}
+
+.results{
+background:#252525;
+padding:15px;
+border-radius:12px;
+margin-top:10px;
+display:none;
+border-left:4px solid var(--primary);
+}
+
+.stat-card{
+background:var(--card);
+padding:12px;
+border-radius:10px;
+margin-bottom:15px;
+border:1px solid #333;
+}
+
+.stat-card h4{
+margin:0 0 10px 0;
+color:var(--secondary);
+text-transform:uppercase;
+font-size:12px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:8px;
+}
+
+.item{
+background:#252525;
+padding:8px;
+border-radius:6px;
+}
+
+.item span{
+font-size:10px;
+color:#888;
+display:block;
+}
+
+.item b{
+font-size:14px;
+}
+
+.bill{
+display:flex;
+justify-content:space-between;
+background:#2a2a2a;
+padding:10px;
+border-radius:8px;
+margin-bottom:5px;
+}
+
+.hidden{
+display:none;
+}
+
+</style>
 </head>
+
 <body>
 
 <div class="container">
-    <div class="fin-card">
-        <small style="color:#888">DÍVIDA RESTANTE</small>
-        <span id="txtDivida" class="fin-val">R$ 0,00</span>
-        <small id="txtMeta" style="color:var(--primary)">Meta: R$ 0,00 / dia</small>
-    </div>
 
-    <div class="tabs">
-        <button class="tab-btn active" onclick="showTab(1)">CORRIDA</button>
-        <button class="tab-btn" onclick="showTab(2)">RESUMOS</button>
-        <button class="tab-btn" onclick="showTab(3)">CONTAS</button>
-    </div>
+<div class="fin-card">
+<small style="color:#888">DÍVIDA RESTANTE</small>
+<span id="txtDivida" class="fin-val">R$ 0,00</span>
+<small id="txtMeta" style="color:var(--primary)">Meta: R$ 0,00 / dia</small>
+</div>
 
-    <div id="tab1">
-        <div class="input-group">
-            <label>Ganho Bruto (R$)</label>
-            <input type="number" id="inBruto" step="0.01" placeholder="0.00">
-            <label>KM Rodados</label>
-            <input type="number" id="inKm" step="0.1" placeholder="0.0">
-            <label>Horas Online</label>
-            <input type="number" id="inHoras" step="0.1" placeholder="0.0">
-            <label>Alimentação (R$)</label>
-            <input type="number" id="inComida" step="0.01" placeholder="0.00">
-            <div style="display:flex; gap:10px">
-                <div style="flex:1"><label>Média Km/L</label><input type="number" id="inMedia" step="0.1"></div>
-                <div style="flex:1"><label>Gasolina R$</label><input type="number" id="inGas" step="0.01"></div>
-            </div>
-        </div>
-        <button class="btn btn-calc" onclick="fazerCalculo()">CALCULAR</button>
-        <button class="btn btn-save" onclick="fazerSalvar()">SALVAR E ABATER</button>
-        <div id="resBox" class="results"></div>
-    </div>
+<div class="tabs">
+<button type="button" class="tab-btn active" onclick="showTab(1)">CORRIDA</button>
+<button type="button" class="tab-btn" onclick="showTab(2)">RESUMOS</button>
+<button type="button" class="tab-btn" onclick="showTab(3)">CONTAS</button>
+</div>
 
-    <div id="tab2" class="hidden">
-        <div id="boxResumos"></div>
-    </div>
+<div id="tab1">
 
-    <div id="tab3" class="hidden">
-        <div class="input-group">
-            <label>Nome da Conta</label>
-            <input type="text" id="inContaNome">
-            <label>Valor (R$)</label>
-            <input type="number" id="inContaValor" step="0.01">
-            <button class="btn btn-save" onclick="adicionarConta()">ADICIONAR</button>
-        </div>
-        <div id="boxContas"></div>
-        <button onclick="limparTudo()" style="color:red; background:none; border:none; width:100%; margin-top:20px">LIMPAR TUDO</button>
-    </div>
+<div class="input-group">
+
+<label>Ganho Bruto (R$)</label>
+<input type="number" id="inBruto" step="0.01">
+
+<label>KM Rodados</label>
+<input type="number" id="inKm" step="0.1">
+
+<label>Horas Online</label>
+<input type="number" id="inHoras" step="0.1">
+
+<label>Alimentação (R$)</label>
+<input type="number" id="inComida" step="0.01">
+
+<div style="display:flex;gap:10px">
+
+<div style="flex:1">
+<label>Média Km/L</label>
+<input type="number" id="inMedia" step="0.1">
+</div>
+
+<div style="flex:1">
+<label>Gasolina R$</label>
+<input type="number" id="inGas" step="0.01">
+</div>
+
+</div>
+
+</div>
+
+<button type="button" class="btn btn-calc" onclick="fazerCalculo()">CALCULAR</button>
+
+<button type="button" class="btn btn-save" onclick="fazerSalvar()">SALVAR E ABATER</button>
+
+<div id="resBox" class="results"></div>
+
+</div>
+
+<div id="tab2" class="hidden">
+<div id="boxResumos"></div>
+</div>
+
+<div id="tab3" class="hidden">
+
+<div class="input-group">
+
+<label>Nome da Conta</label>
+<input type="text" id="inContaNome">
+
+<label>Valor (R$)</label>
+<input type="number" id="inContaValor" step="0.01">
+
+<button type="button" class="btn btn-save" onclick="adicionarConta()">ADICIONAR</button>
+
+</div>
+
+<div id="boxContas"></div>
+
+<button type="button" onclick="limparTudo()" style="color:red;background:none;border:none;width:100%;margin-top:20px">
+LIMPAR TUDO
+</button>
+
+</div>
+
 </div>
 
 <script>
-    let dados = JSON.parse(localStorage.getItem('driver_v6')) || { contas: [], hist: [] };
-    let cacheCalc = null;
 
-    function salvarDados() { localStorage.setItem('driver_v6', JSON.stringify(dados)); }
+let dados = JSON.parse(localStorage.getItem('driver_v6')) || {contas:[],hist:[]}
 
-    function showTab(n) {
-        document.getElementById('tab1').classList.toggle('hidden', n !== 1);
-        document.getElementById('tab2').classList.toggle('hidden', n !== 2);
-        document.getElementById('tab3').classList.toggle('hidden', n !== 3);
-        const btns = document.querySelectorAll('.tab-btn');
-        btns.forEach((b, i) => b.classList.toggle('active', i+1 === n));
-        if(n === 2) renderResumos();
-    }
+let cacheCalc=null
 
-    function fazerCalculo() {
-        const b = parseFloat(document.getElementById('inBruto').value) || 0;
-        const k = parseFloat(document.getElementById('inKm').value) || 0;
-        const h = parseFloat(document.getElementById('inHoras').value) || 0;
-        const c = parseFloat(document.getElementById('inComida').value) || 0;
-        const m = parseFloat(document.getElementById('inMedia').value) || 0;
-        const g = parseFloat(document.getElementById('inGas').value) || 0;
+function salvarDados(){
+localStorage.setItem('driver_v6',JSON.stringify(dados))
+}
 
-        if(!b || !k || !m) return alert("Preencha Bruto, KM e Média!");
+function showTab(n){
 
-        const custoGas = (k/m)*g;
-        const liq = b - custoGas - c;
-        
-        document.getElementById('resBox').style.display = 'block';
-        document.getElementById('resBox').innerHTML = `
-            <b>LUCRO HOJE: R$ ${liq.toFixed(2)}</b><br>
-            <small>Bruto p/ KM: R$ ${(b/k).toFixed(2)}</small><br>
-            <small>Líquido p/ Hora: R$ ${(h>0?liq/h:0).toFixed(2)}</small>
-        `;
-        
-        localStorage.setItem('p_m', m); localStorage.setItem('p_g', g);
-        cacheCalc = { b, l: liq, k, h, d: new Date().toISOString() };
-    }
+document.getElementById('tab1').classList.toggle('hidden',n!==1)
+document.getElementById('tab2').classList.toggle('hidden',n!==2)
+document.getElementById('tab3').classList.toggle('hidden',n!==3)
 
-    function fazerSalvar() {
-        if(!cacheCalc) return alert("Calcule antes!");
-        dados.hist.push(cacheCalc);
-        salvarDados();
-        alert("Salvo!");
-        cacheCalc = null;
-        document.getElementById('inBruto').value = "";
-        document.getElementById('resBox').style.display = 'none';
-        renderGeral();
-    }
+const btns=document.querySelectorAll('.tab-btn')
 
-    function adicionarConta() {
-        const n = document.getElementById('inContaNome').value;
-        const v = parseFloat(document.getElementById('inContaValor').value) || 0;
-        if(!n || !v) return;
-        dados.contas.push({ id: Date.now(), n, v });
-        salvarDados();
-        document.getElementById('inContaNome').value = "";
-        document.getElementById('inContaValor').value = "";
-        renderGeral();
-    }
+btns.forEach((b,i)=>{
+b.classList.toggle('active',i+1===n)
+})
 
-    function renderGeral() {
-        const agora = new Date();
-        const tContas = dados.contas.reduce((a, b) => a + b.v, 0);
-        const tPago = dados.hist.filter(i => {
-            let d = new Date(i.d);
-            return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear();
-        }).reduce((a, b) => a + b.l, 0);
+if(n===2)renderResumos()
 
-        const resta = tContas - tPago;
-        document.getElementById('txtDivida').innerText = "R$ " + (resta > 0 ? resta.toFixed(2) : "0,00");
-        document.getElementById('txtDivida').style.color = resta > 0 ? "var(--danger)" : "var(--primary)";
-        document.getElementById('txtMeta').innerText = Meta: R$ ${(resta > 0 ? resta/22 : 0).toFixed(2)} / dia;
+}
 
-        document.getElementById('boxContas').innerHTML = dados.contas.map(c => `
-            <div class="bill"><span>${c.n}</span> <b>R$ ${c.v.toFixed(2)}</b></div>
-        `).join('');
-    }
+function fazerCalculo(){
 
-    function renderResumos() {
-        const agora = new Date();
-        const filtros = [
-            { t: 'Hoje', d: 0 },
-            { t: 'Semana', d: 7 },
-            { t: 'Mês', d: 'm' },
-            { t: 'Ano', d: 'a' }
-        ];
+const b=parseFloat(document.getElementById('inBruto').value)||0
+const k=parseFloat(document.getElementById('inKm').value)||0
+const h=parseFloat(document.getElementById('inHoras').value)||0
+const c=parseFloat(document.getElementById('inComida').value)||0
+const m=parseFloat(document.getElementById('inMedia').value)||0
+const g=parseFloat(document.getElementById('inGas').value)||0
 
-        document.getElementById('boxResumos').innerHTML = filtros.map(f => {
-            let lista = dados.hist.filter(i => {
-                let dt = new Date(i.d);
-                if(f.d === 0) return dt.toDateString() === agora.toDateString();
-                if(f.d === 'm') return dt.getMonth() === agora.getMonth();
-                if(f.d === 'a') return dt.getFullYear() === agora.getFullYear();
-                return (agora - dt) / 86400000 <= f.d;
-            });
+if(b<=0||k<=0||m<=0){
+alert("Preencha Bruto, KM e Média!")
+return
+}
 
-            let tb = lista.reduce((a, b) => a + b.b, 0);
-            let tl = lista.reduce((a, b) => a + b.l, 0);
-            let tk = lista.reduce((a, b) => a + b.k, 0);
-            let th = lista.reduce((a, b) => a + b.h, 0);
+const custoGas=(k/m)*g
+const liq=b-custoGas-c
 
-            return `
-                <div class="stat-card">
-                    <h4>${f.t}</h4>
-                    <div class="grid">
-                        <div class="item"><span>Líquido</span><b>R$ ${tl.toFixed(2)}</b></div>
-                        <div class="item"><span>Bruto</span><b>R$ ${tb.toFixed(2)}</b></div>
-                        <div class="item"><span>Líq/KM</span><b>R$ ${(tk>0?tl/tk:0).toFixed(2)}</b></div>
-                        <div class="item"><span>Brut/KM</span><b>R$ ${(tk>0?tb/tk:0).toFixed(2)}</b></div>
-                        <div class="item"><span>Líq/Hora</span><b>R$ ${(th>0?tl/th:0).toFixed(2)}</b></div>
-                        <div class="item"><span>Brut/Hora</span><b>R$ ${(th>0?tb/th:0).toFixed(2)}</b></div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
+const brutoKm=b/k
+const liqHora=h>0?liq/h:0
 
-    function limparTudo() { if(confirm("Zerar tudo?")) { localStorage.removeItem('driver_v6'); location.reload(); } }
+const box=document.getElementById('resBox')
 
-    window.onload = function() {
-        if(localStorage.getItem('p_m')) document.getElementById('inMedia').value = localStorage.getItem('p_m');
-        if(localStorage.getItem('p_g')) document.getElementById('inGas').value = localStorage.getItem('p_g');
-        renderGeral();
-    };
+box.style.display="block"
+
+box.innerHTML=`
+<b>LUCRO HOJE: R$ ${liq.toFixed(2)}</b><br>
+<small>Bruto p/ KM: R$ ${brutoKm.toFixed(2)}</small><br>
+<small>Líquido p/ Hora: R$ ${liqHora.toFixed(2)}</small>
+`
+
+localStorage.setItem('p_m',m)
+localStorage.setItem('p_g',g)
+
+cacheCalc={b:b,l:liq,k:k,h:h,d:new Date().toISOString()}
+
+}
+
+function fazerSalvar(){
+
+if(!cacheCalc){
+alert("Calcule antes!")
+return
+}
+
+dados.hist.push(cacheCalc)
+
+salvarDados()
+
+alert("Salvo!")
+
+cacheCalc=null
+
+document.getElementById('inBruto').value=""
+
+document.getElementById('resBox').style.display="none"
+
+renderGeral()
+
+}
+
+function adicionarConta(){
+
+const n=document.getElementById('inContaNome').value
+
+const v=parseFloat(document.getElementById('inContaValor').value)||0
+
+if(!n||!v)return
+
+dados.contas.push({id:Date.now(),n,v})
+
+salvarDados()
+
+document.getElementById('inContaNome').value=""
+document.getElementById('inContaValor').value=""
+
+renderGeral()
+
+}
+
+function renderGeral(){
+
+const agora=new Date()
+
+const tContas=dados.contas.reduce((a,b)=>a+b.v,0)
+
+const tPago=dados.hist.filter(i=>{
+
+let d=new Date(i.d)
+
+return d.getMonth()===agora.getMonth() && d.getFullYear()===agora.getFullYear()
+
+}).reduce((a,b)=>a+b.l,0)
+
+const resta=tContas-tPago
+
+document.getElementById('txtDivida').innerText="R$ "+(resta>0?resta.toFixed(2):"0,00")
+
+document.getElementById('txtDivida').style.color=resta>0?"var(--danger)":"var(--primary)"
+
+document.getElementById('txtMeta').innerText=Meta: R$ ${(resta>0?resta/22:0).toFixed(2)} / dia
+
+document.getElementById('boxContas').innerHTML=dados.contas.map(c=>`
+<div class="bill">
+<span>${c.n}</span>
+<b>R$ ${c.v.toFixed(2)}</b>
+</div>
+`).join('')
+
+}
+
+function renderResumos(){
+
+const agora=new Date()
+
+const filtros=[
+{t:'Hoje',d:0},
+{t:'Semana',d:7},
+{t:'Mês',d:'m'},
+{t:'Ano',d:'a'}
+]
+
+document.getElementById('boxResumos').innerHTML=filtros.map(f=>{
+
+let lista=dados.hist.filter(i=>{
+
+let dt=new Date(i.d)
+
+if(f.d===0)return dt.toDateString()===agora.toDateString()
+
+if(f.d==='m')return dt.getMonth()===agora.getMonth()
+
+if(f.d==='a')return dt.getFullYear()===agora.getFullYear()
+
+return (agora-dt)/86400000<=f.d
+
+})
+
+let tb=lista.reduce((a,b)=>a+b.b,0)
+let tl=lista.reduce((a,b)=>a+b.l,0)
+let tk=lista.reduce((a,b)=>a+b.k,0)
+let th=lista.reduce((a,b)=>a+b.h,0)
+
+return`
+
+<div class="stat-card">
+
+<h4>${f.t}</h4>
+
+<div class="grid">
+
+<div class="item">
+<span>Líquido</span>
+<b>R$ ${tl.toFixed(2)}</b>
+</div>
+
+<div class="item">
+<span>Bruto</span>
+<b>R$ ${tb.toFixed(2)}</b>
+</div>
+
+<div class="item">
+<span>Líq/KM</span>
+<b>R$ ${(tk>0?tl/tk:0).toFixed(2)}</b>
+</div>
+
+<div class="item">
+<span>Brut/KM</span>
+<b>R$ ${(tk>0?tb/tk:0).toFixed(2)}</b>
+</div>
+
+<div class="item">
+<span>Líq/Hora</span>
+<b>R$ ${(th>0?tl/th:0).toFixed(2)}</b>
+</div>
+
+<div class="item">
+<span>Brut/Hora</span>
+<b>R$ ${(th>0?tb/th:0).toFixed(2)}</b>
+</div>
+
+</div>
+
+</div>
+
+`
+
+}).join('')
+
+}
+
+function limparTudo(){
+
+if(confirm("Zerar tudo?")){
+localStorage.removeItem('driver_v6')
+location.reload()
+}
+
+}
+
+window.onload=function(){
+
+if(localStorage.getItem('p_m')){
+document.getElementById('inMedia').value=localStorage.getItem('p_m')
+}
+
+if(localStorage.getItem('p_g')){
+document.getElementById('inGas').value=localStorage.getItem('p_g')
+}
+
+renderGeral()
+
+}
+
 </script>
 
 </body>
