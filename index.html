@@ -3,182 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Pro - Gestão Elite</title>
+    <title>Driver Pro - Gestão Integrada</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <style>
         :root { --primary: #00ff88; --secondary: #0088ff; --danger: #ff4444; --bg: #121212; --card: #1e1e1e; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; padding-bottom: 80px; }
         .container { max-width: 450px; margin: auto; }
-        h1 { color: var(--primary); text-align: center; margin-bottom: 5px; }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 5px; font-size: 1.5em; }
+        
+        /* Sistema de Abas */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: #2a2a2a; color: #888; font-weight: bold; cursor: pointer; }
+        .tab-btn.active { background: var(--secondary); color: white; }
+
         .input-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        label { display: block; margin: 10px 0 5px; color: var(--primary); font-weight: bold; font-size: 0.75em; text-transform: uppercase; }
+        label { display: block; margin: 8px 0 4px; color: var(--primary); font-weight: bold; font-size: 0.75em; text-transform: uppercase; }
         input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+        
+        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .btn-calc { background: var(--primary); color: #121212; }
         .btn-save { background: var(--secondary); color: white; }
-        .results { background: var(--card); padding: 15px; border-radius: 12px; border-left: 5px solid var(--primary); margin-top: 20px; display: none; }
-        .res-item { display: flex; justify-content: space-between; margin: 8px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .val { font-weight: bold; color: var(--primary); }
-        .history { margin-top: 30px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 10px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 4px solid var(--secondary); }
-        .stat-title { color: var(--secondary); font-size: 0.85em; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; }
-        .stat-row { display: flex; justify-content: space-between; margin: 4px 0; font-size: 0.9em; color: #bbb; }
-        .stat-row b { color: #fff; }
-        .btn-clear { background: var(--danger); color: white; margin-top: 20px; opacity: 0.7; font-size: 13px; }
-        .highlight { color: var(--primary) !important; font-weight: bold; font-size: 1.1em; }
+        
+        .results { background: var(--card); padding: 15px; border-radius: 12px; border-left: 5px solid var(--primary); margin-top: 15px; display: none; }
+        .res-item { display: flex; justify-content: space-between; margin: 5px 0; }
+        
+        /* Dashboard Financeiro */
+        .fin-card { background: linear-gradient(145deg, #1e1e1e, #252525); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
+        .fin-title { font-size: 0.8em; color: #888; text-transform: uppercase; }
+        .fin-val { font-size: 1.4em; font-weight: bold; display: block; margin: 5px 0; }
+        .meta-tag { background: #333; padding: 5px 10px; border-radius: 20px; font-size: 0.8em; color: var(--primary); }
+
+        .bill-item { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.9em; }
+        .btn-del { color: var(--danger); font-weight: bold; background: none; border: none; padding: 0 10px; }
+        
+        .hidden { display: none; }
     </style>
 </head>
-<body onload="carregarTudo()">
+<body onload="inicializar()">
 
 <div class="container">
-    <h1>🚗 Driver Pro</h1>
-    <div style="text-align:center; color:#888; font-size:0.8em; margin-bottom:20px;">Relatórios de Eficiência</div>
+    <h1>🚗 Driver Admin Pro</h1>
 
-    <div class="input-group">
-        <label>💰 Ganho Bruto (R$)</label>
-        <input id="bruto" type="text" inputmode="decimal" placeholder="0,00">
-        <label>📏 KM Rodados</label>
-        <input id="km" type="text" inputmode="decimal" placeholder="0">
-        <label>⏱️ Horas Online</label>
-        <input id="horas" type="text" inputmode="decimal" placeholder="0">
-        <label>🍔 Alimentação/Extras (R$)</label>
-        <input id="comida" type="text" inputmode="decimal" placeholder="0,00">
-        <label>⛽ Média e Preço</label>
-        <div style="display: flex; gap: 10px;">
-            <input id="media" type="text" inputmode="decimal" placeholder="Km/L">
-            <input id="gasolina" type="text" inputmode="decimal" placeholder="R$">
+    <div class="fin-card">
+        <span class="fin-title">Dívida Mensal Restante</span>
+        <span id="dividaRestante" class="fin-val" style="color: var(--danger);">R$ 0,00</span>
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <span class="meta-tag" id="metaDiaria">Meta Diária Sugerida: R$ 0,00</span>
+            <span id="progressoPerc" style="font-size: 0.8em; color: #888;">0% pago</span>
         </div>
     </div>
 
-    <button class="btn-main btn-calc" onclick="calcular()">CALCULAR HOJE</button>
-    <button class="btn-main btn-save" onclick="salvarNoHistorico()">SALVAR NO HISTÓRICO</button>
-
-    <div id="painelResultados" class="results">
-        <div class="res-item"><span>Lucro Líquido:</span> <span class="val" id="resLiq"></span></div>
-        <div class="res-item"><span>Bruto p/ Hora:</span> <span class="val" id="resBrutoHr"></span></div>
+    <div class="tabs">
+        <button id="btnTab1" class="tab-btn active" onclick="mudarAba(1)">Corrida</button>
+        <button id="btnTab2" class="tab-btn" onclick="mudarAba(2)">Contas Casa</button>
     </div>
 
-    <div class="history">
-        <h3>📊 Resumos de Eficiência</h3>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-title">📅 Esta Semana</div>
-                <div class="stat-row"><span>Lucro Líquido:</span> <b id="semLucro" class="highlight">R$ 0,00</b></div>
-                <div class="stat-row"><span>Bruto p/ Hora:</span> <b id="semBrutoHr">R$ 0,00</b></div>
-                <div class="stat-row"><span>Líquido p/ Hora:</span> <b id="semLiqHr">R$ 0,00</b></div>
-                <div class="stat-row"><span>Bruto p/ KM:</span> <b id="semKmBruto">R$ 0,00</b></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">🗓️ Este Mês</div>
-                <div class="stat-row"><span>Lucro Líquido:</span> <b id="mesLucro" class="highlight">R$ 0,00</b></div>
-                <div class="stat-row"><span>Bruto p/ Hora:</span> <b id="mesBrutoHr">R$ 0,00</b></div>
-                <div class="stat-row"><span>Líquido p/ Hora:</span> <b id="mesLiqHr">R$ 0,00</b></div>
-                <div class="stat-row"><span>Bruto p/ KM:</span> <b id="mesKmBruto">R$ 0,00</b></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">💰 Ano Atual</div>
-                <div class="stat-row"><span>Lucro Total:</span> <b id="anoLucro" class="highlight" style="color:#00ff88">R$ 0,00</b></div>
-                <div class="stat-row"><span>Bruto p/ Hora (Méd.):</span> <b id="anoBrutoHr">R$ 0,00</b></div>
-                <div class="stat-row"><span>Bruto p/ KM (Méd.):</span> <b id="anoKmBruto">R$ 0,00</b></div>
+    <div id="abaCorrida">
+        <div class="input-group">
+            <label>💰 Ganho Bruto (R$)</label>
+            <input id="bruto" type="text" inputmode="decimal" placeholder="0,00">
+            <label>📏 KM Rodados</label>
+            <input id="km" type="text" inputmode="decimal" placeholder="0">
+            <label>⏱️ Horas Online</label>
+            <input id="horas" type="text" inputmode="decimal" placeholder="0">
+            <label>🍔 Comida/Extras (R$)</label>
+            <input id="comida" type="text" inputmode="decimal" placeholder="0,00">
+            <div style="display: flex; gap: 10px; margin-top:10px;">
+                <div style="flex:1"><label>Km/L</label><input id="media" type="text" inputmode="decimal"></div>
+                <div style="flex:1"><label>Preço Litro</label><input id="gasolina" type="text" inputmode="decimal"></div>
             </div>
         </div>
-        <button class="btn-main btn-clear" onclick="limparHistorico()">ZERAR TUDO</button>
+        <button class="btn-main btn-calc" onclick="calcular()">CALCULAR HOJE</button>
+        <button class="btn-main btn-save" onclick="salvarCorrida()">SALVAR E ABATER DÍVIDA</button>
+
+        <div id="painelResultados" class="results">
+            <div class="res-item"><span>Lucro Líquido:</span> <b class="val" id="resLiq" style="color:var(--primary)"></b></div>
+            <div class="res-item" style="font-size: 0.8em; color: #888;"><span>Bruto p/ Hora:</span> <span id="resBrutoHr"></span></div>
+        </div>
     </div>
+
+    <div id="abaContas" class="hidden">
+        <div class="input-group">
+            <label>Nome da Conta (Ex: Aluguel)</label>
+            <input id="nomeConta" type="text" placeholder="Ex: Internet">
+            <label>Valor (R$)</label>
+            <input id="valorConta" type="text" inputmode="decimal" placeholder="0,00">
+            <label>Dias de trabalho no mês (Para meta)</label>
+            <input id="diasTrabalho" type="number" value="22">
+            <button class="btn-main btn-save" style="margin-top:15px; background:var(--primary); color:#121212" onclick="addConta()">ADICIONAR CONTA</button>
+        </div>
+        
+        <h3>Lista de Contas</h3>
+        <div id="listaContas"></div>
+        <button class="btn-main" style="background:#444; margin-top:20px" onclick="limparContas()">REINICIAR MÊS</button>
+    </div>
+
 </div>
 
 <script>
-    let tempEntry = null;
+    let db = { contas: [], historico: [], diasMeta: 22 };
+    let lucroAtual = 0;
 
-    function parseVal(id) {
+    function format(id) {
         let v = document.getElementById(id).value.replace(',', '.').trim();
         return v === "" ? 0 : parseFloat(v);
     }
 
-    function carregarTudo() {
+    function inicializar() {
+        if(localStorage.getItem('driver_db_v4')) {
+            db = JSON.parse(localStorage.getItem('driver_db_v4'));
+        }
         if(localStorage.getItem('pref_media')) document.getElementById('media').value = localStorage.getItem('pref_media');
         if(localStorage.getItem('pref_gas')) document.getElementById('gasolina').value = localStorage.getItem('pref_gas');
-        atualizarDashboard();
+        
+        document.getElementById('diasTrabalho').value = db.diasMeta || 22;
+        atualizarUI();
+    }
+
+    function mudarAba(n) {
+        document.getElementById('abaCorrida').classList.toggle('hidden', n !== 1);
+        document.getElementById('abaContas').classList.toggle('hidden', n !== 2);
+        document.getElementById('btnTab1').classList.toggle('active', n === 1);
+        document.getElementById('btnTab2').classList.toggle('active', n === 2);
+    }
+
+    function addConta() {
+        const nome = document.getElementById('nomeConta').value;
+        const valor = format('valorConta');
+        if(!nome || valor <= 0) return;
+        
+        db.contas.push({ id: Date.now(), nome, valor });
+        db.diasMeta = parseInt(document.getElementById('diasTrabalho').value) || 22;
+        
+        salvarDB();
+        document.getElementById('nomeConta').value = "";
+        document.getElementById('valorConta').value = "";
+        atualizarUI();
+    }
+
+    function removerConta(id) {
+        db.contas = db.contas.filter(c => c.id !== id);
+        salvarDB();
+        atualizarUI();
     }
 
     function calcular() {
-        const bruto = parseVal('bruto');
-        const km = parseVal('km');
-        const horas = parseVal('horas');
-        const comida = parseVal('comida');
-        const media = parseVal('media');
-        const gasolina = parseVal('gasolina');
+        const bruto = format('bruto');
+        const km = format('km');
+        const horas = format('horas');
+        const comida = format('comida');
+        const media = format('media');
+        const gasolina = format('gasolina');
 
-        if(bruto <= 0 || km <= 0) { alert("Preencha Ganhos e KM!"); return; }
+        if(bruto <= 0 || km <= 0) return alert("Preencha ganhos e KM!");
 
         const gastoGas = (km / media) * gasolina;
-        const liquido = bruto - gastoGas - comida;
-        const brutoHr = horas > 0 ? bruto / horas : 0;
+        lucroAtual = bruto - gastoGas - comida;
 
+        document.getElementById('resLiq').innerText = "R$ " + lucroAtual.toFixed(2);
+        document.getElementById('resBrutoHr').innerText = "R$ " + (horas > 0 ? (bruto/horas).toFixed(2) : "0.00");
+        document.getElementById('painelResultados').style.display = 'block';
+        
         localStorage.setItem('pref_media', media);
         localStorage.setItem('pref_gas', gasolina);
-
-        document.getElementById('resLiq').innerText = "R$ " + liquido.toFixed(2);
-        document.getElementById('resBrutoHr').innerText = "R$ " + brutoHr.toFixed(2);
-        document.getElementById('painelResultados').style.display = 'block';
-
-        tempEntry = { bruto: bruto, lucro: liquido, km: km, horas: horas, data: new Date().toISOString() };
     }
 
-    function salvarNoHistorico() {
-        if(!tempEntry) { alert("Calcule antes de salvar!"); return; }
-        let hist = JSON.parse(localStorage.getItem('db_driver_v3')) || [];
-        hist.push(tempEntry);
-        localStorage.setItem('db_driver_v3', JSON.stringify(hist));
-        alert("Salvo com sucesso!");
-        tempEntry = null;
-        atualizarDashboard();
-    }
-
-    function atualizarDashboard() {
-        let hist = JSON.parse(localStorage.getItem('db_driver_v3')) || [];
-        const agora = new Date();
+    function salvarCorrida() {
+        if(lucroAtual <= 0) return alert("Calcule primeiro!");
         
-        let s = {
-            sem: { bruto: 0, liq: 0, km: 0, hr: 0 },
-            mes: { bruto: 0, liq: 0, km: 0, hr: 0 },
-            ano: { bruto: 0, liq: 0, km: 0, hr: 0 }
-        };
-
-        hist.forEach(i => {
-            let d = new Date(i.data);
-            let diffDias = (agora - d) / (1000 * 60 * 60 * 24);
-
-            if(diffDias <= 7) { 
-                s.sem.bruto += i.bruto; s.sem.liq += i.lucro; s.sem.km += i.km; s.sem.hr += i.horas; 
-            }
-            if(d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear()) {
-                s.mes.bruto += i.bruto; s.mes.liq += i.lucro; s.mes.km += i.km; s.mes.hr += i.horas;
-            }
-            if(d.getFullYear() === agora.getFullYear()) {
-                s.ano.bruto += i.bruto; s.ano.liq += i.lucro; s.ano.km += i.km; s.ano.hr += i.horas;
-            }
-        });
-
-        const updateCard = (prefix, data) => {
-            document.getElementById(${prefix}Lucro).innerText = "R$ " + data.liq.toFixed(2);
-            document.getElementById(${prefix}BrutoHr).innerText = "R$ " + (data.hr > 0 ? (data.bruto / data.hr).toFixed(2) : "0.00");
-            if(document.getElementById(${prefix}LiqHr)) 
-                document.getElementById(${prefix}LiqHr).innerText = "R$ " + (data.hr > 0 ? (data.liq / data.hr).toFixed(2) : "0.00");
-            document.getElementById(${prefix}KmBruto).innerText = "R$ " + (data.km > 0 ? (data.bruto / data.km).toFixed(2) : "0.00");
-        };
-
-        updateCard('sem', s.sem);
-        updateCard('mes', s.mes);
-        updateCard('ano', s.ano);
+        db.historico.push({ data: new Date().toISOString(), lucro: lucroAtual });
+        salvarDB();
+        alert("Lucro salvo e abatido das contas!");
+        lucroAtual = 0;
+        document.getElementById('bruto').value = "";
+        document.getElementById('painelResultados').style.display = 'none';
+        atualizarUI();
     }
 
-    function limparHistorico() {
-        if(confirm("Deseja apagar permanentemente todo o histórico?")) {
-            localStorage.removeItem('db_driver_v3');
-            atualizarDashboard();
+    function atualizarUI() {
+        const agora = new Date();
+        const totalContas = db.contas.reduce((acc, c) => acc + c.valor, 0);
+        
+        // Soma lucro do mês atual
+        const totalPagoNoMes = db.historico.reduce((acc, h) => {
+            let d = new Date(h.data);
+            if(d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear()) {
+                return acc + h.lucro;
+            }
+            return acc;
+        }, 0);
+
+        const faltante = totalContas - totalPagoNoMes;
+        const meta = faltante > 0 ? (faltante / db.diasMeta) : 0;
+        const perc = totalContas > 0 ? Math.min((totalPagoNoMes / totalContas) * 100, 100) : 0;
+
+        document.getElementById('dividaRestante').innerText = "R$ " + (faltante > 0 ? faltante.toFixed(2) : "0,00 (PAGA!)");
+        document.getElementById('dividaRestante').style.color = faltante > 0 ? "var(--danger)" : "var(--primary)";
+        document.getElementById('metaDiaria').innerText = Meta Diária: R$ ${meta.toFixed(2)};
+        document.getElementById('progressoPerc').innerText = ${perc.toFixed(0)}% das contas pagas;
+
+        // Lista de contas
+        const lista = document.getElementById('listaContas');
+        lista.innerHTML = db.contas.map(c => `
+            <div class="bill-item">
+                <span>${c.nome}</span>
+                <span>R$ ${c.valor.toFixed(2)} <button class="btn-del" onclick="removerConta(${c.id})">X</button></span>
+            </div>
+        `).join('');
+    }
+
+    function salvarDB() { localStorage.setItem('driver_db_v4', JSON.stringify(db)); }
+
+    function limparContas() {
+        if(confirm("Isso zerará suas contas e histórico para um novo mês. Continuar?")) {
+            db.contas = [];
+            db.historico = [];
+            salvarDB();
+            atualizarUI();
         }
     }
 </script>
